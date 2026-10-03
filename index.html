@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>即答九九</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F5F9;
+  --surface:#FFFFFF;
+  --surface-2:#EAEFF6;
+  --border:#D8E1EC;
+  --ink:#0F1B2D;
+  --soft:#5C6B80;
+  --blue:#2F6FED;
+  --blue-strong:#1D4FC4;
+  --blue-tint:#E4ECFE;
+  --ok:#15803D;
+  --ng:#D92D20;
+  --focus:#2F6FED;
+  --sans:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  --num:"Space Grotesk","Zen Kaku Gothic New",sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1420; --surface:#111C2B; --surface-2:#16233E; --border:#243449;
+  }
+}
+html{ scroll-padding-top:env(safe-area-inset-top,0px); height:100%; }
+*,*::before,*::after{ box-sizing:inherit; }
+body{
+  height:100%; margin:0; overflow:hidden;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:500;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none; user-select:none;
+}
+[hidden]{ display:none !important; }
+button{ font:inherit; color:inherit; cursor:pointer; touch-action:manipulation; background:none; }
+button:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+button:disabled{ cursor:default; }
+
+#app{ position:relative; height:100%; max-width:520px; margin:0 auto; }
+.screen{ position:absolute; inset:0; display:none; flex-direction:column; overflow-y:auto; overflow-x:hidden; }
+.screen.active{ display:flex; }
+
+/* ---------- home ---------- */
+#home{ padding:26px 20px 0; }
+h1{ margin:0; font-family:var(--sans); font-weight:900; font-size:32px; line-height:1.25; letter-spacing:.01em; color:var(--ink); }
+.tagline{ margin:8px 0 0; font-size:14px; line-height:1.7; color:var(--soft); }
+
+.hero{
+  margin:20px 0 4px; padding:22px 20px; background:var(--surface);
+  border:1px solid var(--border); border-radius:18px;
+  box-shadow:0 1px 2px rgba(16,24,40,.04);
+}
+.hero-eq{ display:flex; align-items:baseline; gap:10px; font-family:var(--num); font-weight:700; font-size:38px; }
+.hero-eq .op{ color:var(--soft); font-weight:600; font-size:26px; }
+.hero-eq .ans{ color:var(--blue); }
+.hero-cap{ margin:12px 0 0; font-size:13px; color:var(--soft); }
+
+.group{ margin:22px 0 0; padding:0; border:0; min-width:0; }
+.group > h2{ margin:0 0 8px; font-size:14px; font-weight:700; color:var(--ink); }
+.group > .note{ margin:-4px 0 8px; font-size:12px; color:var(--soft); }
+
+.modes{ border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface); }
+.mode{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;
+  padding:14px 16px; border:0; text-align:left;
+}
+.mode + .mode{ border-top:1px solid var(--border); }
+.mode[aria-checked="true"]{ background:var(--blue-tint); box-shadow:inset 3px 0 0 var(--blue); }
+.mode-main{ display:flex; flex-direction:column; gap:2px; }
+.mode-name{ font-size:16px; font-weight:700; }
+.mode-best{ font-size:12px; color:var(--soft); }
+.mode-sample{ font-family:var(--num); font-weight:700; font-size:15px; color:var(--soft); white-space:nowrap; }
+.mode[aria-checked="true"] .mode-sample{ color:var(--blue-strong); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  min-width:44px; height:44px; padding:0 12px; background:var(--surface);
+  border:1px solid var(--border); border-radius:10px;
+  font-family:var(--num); font-weight:700; font-size:18px;
+}
+.chip.wide{ font-family:var(--sans); font-size:13px; font-weight:700; padding:0 14px; }
+.chip[aria-pressed="true"]{ background:var(--blue); border-color:var(--blue); color:#fff; }
+
+.speedslider{ padding:14px 16px 12px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+.speedslider input[type=range]{
+  width:100%; height:6px; -webkit-appearance:none; appearance:none;
+  background:linear-gradient(to right, var(--blue-tint), var(--blue));
+  border-radius:999px; outline:none; margin:4px 0;
+}
+.speedslider input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+  background:var(--surface); border:2px solid var(--blue);
+  box-shadow:0 1px 3px rgba(16,24,40,.2); cursor:pointer;
+}
+.speedslider input[type=range]::-moz-range-thumb{
+  width:26px; height:26px; border-radius:50%; border:2px solid var(--blue);
+  background:var(--surface); cursor:pointer;
+}
+.speedslider-label{ margin-top:10px; font-family:var(--num); font-weight:700; font-size:18px; text-align:center; color:var(--blue-strong); }
+.speedslider-ticks{ position:relative; height:14px; margin-top:6px; font-size:11px; color:var(--soft); }
+.speedslider-ticks span{ position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; }
+.speedslider-ticks span:nth-child(1){ left:13px; }
+.speedslider-ticks span:nth-child(2){ left:calc(13px + (100% - 26px) * 0.3333); }
+.speedslider-ticks span:nth-child(3){ left:calc(13px + (100% - 26px) * 0.6667); }
+.speedslider-ticks span:nth-child(4){ left:calc(100% - 13px); }
+.speedslider-ticks span.active{ color:var(--ink); font-weight:700; }
+.seg-note{ margin:8px 0 0; font-size:12px; color:var(--soft); }
+
+.switch{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;
+  padding:13px 16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; text-align:left;
+}
+.switch-label{ display:flex; flex-direction:column; gap:2px; font-weight:700; font-size:14px; }
+.switch-label small{ font-weight:500; font-size:12px; color:var(--soft); }
+.switch-state{
+  min-width:48px; padding:5px 0; text-align:center; font-size:12px; font-weight:700;
+  border:1px solid var(--border); border-radius:7px; background:var(--surface-2); color:var(--soft);
+}
+.switch[aria-checked="true"] .switch-state{ background:var(--blue); border-color:var(--blue); color:#fff; }
+
+.foot{ margin:22px 0 18px; font-size:12px; line-height:1.8; color:var(--soft); }
+.linkish{ padding:6px 0; font-size:12px; color:var(--soft); text-decoration:underline; text-underline-offset:3px; }
+
+.startbar{
+  position:sticky; bottom:0; margin:0 -20px; padding:22px 20px 16px;
+  background:linear-gradient(to bottom, transparent, var(--bg) 42%);
+}
+.primary{
+  width:100%; height:56px; background:var(--blue); color:#fff;
+  border:0; border-radius:14px; box-shadow:0 6px 16px rgba(47,111,237,.32);
+  font-size:17px; font-weight:700; letter-spacing:.02em;
+}
+.primary:active{ transform:translateY(1px); box-shadow:0 3px 8px rgba(47,111,237,.32); }
+.secondary{
+  width:100%; height:50px; background:var(--surface); color:var(--ink);
+  border:1px solid var(--border); border-radius:14px;
+}
+.secondary:active{ background:var(--surface-2); }
+
+/* ---------- game ---------- */
+#game{ overflow:hidden; }
+.hud{ display:flex; align-items:center; gap:14px; padding:14px 18px 10px; }
+.quit{
+  width:38px; height:38px; flex:none; background:var(--surface);
+  border:1px solid var(--border); border-radius:10px; font-size:18px; line-height:1; color:var(--soft);
+}
+.lives{ display:flex; gap:6px; flex:none; }
+.lives i{ width:12px; height:12px; border-radius:50%; background:var(--blue); border:1px solid var(--blue); }
+.lives i.off{ background:transparent; border-color:var(--border); }
+.hud-mid{ flex:1; display:flex; flex-direction:column; align-items:flex-end; font-size:12px; line-height:1.5; color:var(--soft); min-height:34px; justify-content:center; }
+.hud-mid #combo{ color:var(--blue); font-weight:700; }
+.score{ min-width:60px; text-align:right; font-family:var(--num); font-weight:700; font-size:30px; line-height:1; font-variant-numeric:tabular-nums; }
+
+.arena{ position:relative; flex:1; min-height:180px; }
+.lanes{ position:absolute; inset:0; display:flex; }
+.lanes.dual{ gap:10px; padding:0 4px; }
+.lane{ flex:1; display:flex; flex-direction:column; min-width:0; }
+.field{ position:relative; flex:1; min-height:120px; overflow:hidden; }
+.floor{ position:absolute; left:0; right:0; bottom:0; height:2px; background:var(--border); }
+.card{
+  position:absolute; top:0; left:50%; width:min(88%,380px);
+  background:var(--surface); border:1.5px solid var(--border); border-radius:16px;
+  box-shadow:0 2px 8px rgba(16,24,40,.08);
+  will-change:transform; visibility:hidden;
+}
+.lanes.dual .card{ width:94%; border-radius:12px; }
+.card.show{ visibility:visible; }
+.card .qa{
+  padding:16px 12px; text-align:center; white-space:nowrap;
+  font-family:var(--num); font-weight:700; font-size:clamp(30px,10vw,50px); line-height:1.15;
+}
+.lanes.dual .card .qa{ padding:10px 6px; font-size:clamp(19px,7.5vw,30px); }
+.card.urgent{ border-color:var(--blue); box-shadow:0 0 0 4px rgba(47,111,237,.16),0 2px 8px rgba(16,24,40,.08); }
+.card.ok{ border-color:var(--ok); }
+.card.ng{ border-color:var(--ng); }
+.card.ng .qa{ animation:shake .32s; }
+@keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+.countdown{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:var(--num); font-weight:700; font-size:96px; color:var(--ink); pointer-events:none;
+}
+
+.lane .choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px 4px 4px; }
+.choice{
+  min-height:clamp(60px,10vh,86px); background:var(--surface); color:var(--ink);
+  border:1px solid var(--border); border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.05);
+  font-family:var(--num); font-weight:700; font-size:clamp(20px,6.8vw,30px);
+}
+.lanes.dual .choice{ min-height:clamp(44px,9vh,58px); font-size:clamp(15px,6.4vw,20px); border-radius:10px; }
+.choice:not(:disabled):active{ background:var(--surface-2); transform:translateY(1px); }
+.choice:disabled:not(.correct):not(.wrong){ opacity:.45; }
+.choice.correct{ background:var(--ok); border-color:var(--ok); color:#fff; }
+.choice.wrong{ background:var(--ng); border-color:var(--ng); color:#fff; }
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* ---------- result ---------- */
+#result{ padding:28px 20px 24px; }
+.r-title{ margin:0; font-size:14px; font-weight:700; color:var(--soft); }
+.r-score{ display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 14px; margin:6px 0 0; }
+.r-score #rScore{ font-family:var(--num); font-weight:700; font-size:68px; line-height:1.05; color:var(--ink); font-variant-numeric:tabular-nums; }
+.badge{ padding:4px 10px; background:var(--blue-tint); color:var(--blue-strong); border-radius:8px; font-size:12px; font-weight:700; }
+.r-meta{ margin:4px 0 0; font-size:13px; color:var(--soft); }
+.stats{ margin:22px 0 0; border-top:1px solid var(--border); }
+.stats div{ display:flex; justify-content:space-between; padding:12px 2px; border-bottom:1px solid var(--border); }
+.stats dt{ font-size:14px; color:var(--soft); }
+.stats dd{ margin:0; font-family:var(--num); font-weight:700; font-size:18px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.r-h{ margin:24px 0 8px; font-size:14px; font-weight:700; }
+#weakList{ margin:0; padding:0; list-style:none; border:1px solid var(--border); border-radius:12px; background:var(--surface); overflow:hidden; }
+#weakList li{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:11px 14px; }
+#weakList li + li{ border-top:1px solid var(--border); }
+.w-eq{ font-family:var(--num); font-weight:700; font-size:16px; white-space:nowrap; }
+.w-meta{ font-size:12px; color:var(--soft); text-align:right; }
+.w-empty{ padding:14px; font-size:13px; color:var(--soft); }
+.r-actions{ display:grid; gap:12px; margin-top:26px; }
+
+@media (prefers-reduced-motion: reduce){
+  .card.ng .qa{ animation:none; }
+  .primary:active,.secondary:active,.choice:not(:disabled):active{ transform:none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ホーム -->
+  <section id="home" class="screen active" aria-label="ホーム">
+    <h1>即答九九</h1>
+    <p class="tagline">落ちてくる式に、選んで即答。<br>考える前に答えが出るまで、繰り返し鍛えます。</p>
+
+    <div class="hero">
+      <div class="hero-eq"><span>7</span><span class="op">×</span><span>8</span><span class="op">=</span><span class="ans">56</span></div>
+      <p class="hero-cap">床に着く前に、4択から正しい答えをタップ。</p>
+    </div>
+
+    <fieldset class="group">
+      <h2>モード</h2>
+      <div class="modes" id="modes" role="radiogroup" aria-label="モード"></div>
+    </fieldset>
+
+    <fieldset class="group" id="dansGroup">
+      <h2>出題する段</h2>
+      <p class="note">かける数は 1〜9 です</p>
+      <div class="chips" id="dans"></div>
+    </fieldset>
+
+    <fieldset class="group">
+      <h2>スピード</h2>
+      <div class="speedslider">
+        <input type="range" id="speedRange" min="0" max="3" step="1" value="1" aria-label="スピード">
+        <div class="speedslider-label" id="speedLabel">ふつう</div>
+        <div class="speedslider-ticks">
+          <span>ゆっくり</span><span>ふつう</span><span>はやい</span><span>鬼</span>
+        </div>
+      </div>
+      <p class="seg-note">正解を重ねるごとに、さらに落ちる速さが上がります。</p>
+    </fieldset>
+
+    <fieldset class="group">
+      <button type="button" class="switch" id="dual" role="switch" aria-checked="false">
+        <span class="switch-label">2列で同時に出す<small>2つの問題が同時に落ちてきます</small></span>
+        <span class="switch-state" id="dualState">オフ</span>
+      </button>
+    </fieldset>
+
+    <fieldset class="group">
+      <button type="button" class="switch" id="weak" role="switch" aria-checked="true">
+        <span class="switch-label">苦手な問題を多めに出す<small>間違い・時間がかかった問題を優先します</small></span>
+        <span class="switch-state" id="weakState">オン</span>
+      </button>
+    </fieldset>
+
+    <p class="foot">PCでは 1〜4 キーでも回答できます（2列で同時に出す設定のときは左側のみ）。記録はこの端末のブラウザにだけ保存されます。<br>
+      <button type="button" class="linkish" id="reset">記録をリセット</button></p>
+
+    <div class="startbar"><button type="button" class="primary" id="start">スタート</button></div>
+  </section>
+
+  <!-- ゲーム -->
+  <section id="game" class="screen" aria-label="ゲーム">
+    <div class="hud">
+      <button type="button" class="quit" id="quit" aria-label="やめてホームに戻る">×</button>
+      <div class="lives" id="lives" role="img" aria-label="ライフ"><i></i><i></i><i></i></div>
+      <div class="hud-mid"><span id="lvl">Lv 1</span><span id="combo"></span></div>
+      <div class="score" id="score" aria-label="スコア">0</div>
+    </div>
+    <div class="arena">
+      <div class="lanes" id="lanesWrap"></div>
+      <div class="countdown" id="countdown" hidden></div>
+    </div>
+    <div class="sr" id="live" aria-live="polite"></div>
+  </section>
+
+  <!-- 結果 -->
+  <section id="result" class="screen" aria-label="結果">
+    <h2 class="r-title">結果</h2>
+    <div class="r-score"><span id="rScore">0</span><span id="rNew" class="badge" hidden>自己ベスト更新</span></div>
+    <p class="r-meta" id="rMeta"></p>
+    <dl class="stats">
+      <div><dt>正答率</dt><dd id="rAcc">-</dd></div>
+      <div><dt>最大連続正解</dt><dd id="rCombo">-</dd></div>
+      <div><dt>正解の平均反応時間</dt><dd id="rAvg">-</dd></div>
+      <div><dt>到達レベル</dt><dd id="rLv">-</dd></div>
+    </dl>
+    <h3 class="r-h">見直したい問題</h3>
+    <ul id="weakList"></ul>
+    <div class="r-actions">
+      <button type="button" class="primary" id="again">もういちど</button>
+      <button type="button" class="secondary" id="toHome">ホームへ</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // <pure>
+  function shuffle(arr){
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  function fill(correct, near, pool, n){
+    const seen = new Set([correct]);
+    const out = [];
+    const add = v => { if (out.length < n && !seen.has(v)) { seen.add(v); out.push(v); } };
+    shuffle(near.slice()).slice(0, 2).forEach(add);
+    shuffle(pool.slice()).forEach(add);
+    shuffle(near.slice()).forEach(add);
+    return out;
+  }
+  function makeQuestion(kind, a, b){
+    const p = a * b;
+    let prompt, full, correct, near, pool = [];
+    if (kind === 'ans') {
+      prompt = `${a} × ${b} = ?`;
+      full = `${a} × ${b} = ${p}`;
+      correct = String(p);
+      near = [(a + 1) * b, (a - 1) * b, a * (b + 1), a * (b - 1), (a + 2) * b, a * (b + 2)]
+        .filter(v => v > 0).map(String);
+      for (let x = 1; x <= 9; x++) for (let y = 1; y <= 9; y++) pool.push(String(x * y));
+    } else if (kind === 'expr') {
+      prompt = `${p} = ? × ?`;
+      full = `${p} = ${a} × ${b}`;
+      correct = `${a} × ${b}`;
+      const okPair = (x, y) => x >= 1 && x <= 9 && y >= 1 && y <= 9 && x * y !== p;
+      near = [[a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1], [b, a + 1], [b + 1, a]]
+        .filter(([x, y]) => okPair(x, y)).map(([x, y]) => `${x} × ${y}`);
+      for (let x = 1; x <= 9; x++) for (let y = 1; y <= 9; y++) if (okPair(x, y)) pool.push(`${x} × ${y}`);
+    } else {
+      prompt = `${p} ÷ ${a} = ?`;
+      full = `${p} ÷ ${a} = ${b}`;
+      correct = String(b);
+      near = [b + 1, b - 1, b + 2, b - 2, a].filter(v => v >= 1 && v <= 9 && v !== b).map(String);
+      for (let v = 1; v <= 9; v++) if (v !== b) pool.push(String(v));
+    }
+    const options = shuffle([correct, ...fill(correct, near, pool, 3)]);
+    return { prompt, full, correct, options };
+  }
+  function gcd(a, b){ return b ? gcd(b, a % b) : a; }
+  function decimalOf(n, d){
+    let rem = n % d, digits = '';
+    for (let i = 0; i < 20; i++) {
+      rem *= 10;
+      const dig = Math.floor(rem / d);
+      digits += dig;
+      rem = rem % d;
+      if (rem === 0) break;
+    }
+    return rem === 0 ? ('0.' + digits) : ('0.' + digits.slice(0, 3) + '...');
+  }
+  function buildFracs(){
+    const arr = [];
+    [2, 3, 4, 5, 8, 10].forEach(d => {
+      for (let n = 1; n < d; n++) {
+        if (gcd(n, d) === 1) arr.push({ n, d, key: 'frac:' + n + '-' + d, fracStr: n + '/' + d, decStr: decimalOf(n, d) });
+      }
+    });
+    return arr;
+  }
+  function makeFracQuestion(kind, item, pool){
+    let prompt, full, correct;
+    if (kind === 'f2d') {
+      prompt = item.fracStr + ' = ?';
+      full = item.fracStr + ' = ' + item.decStr;
+      correct = item.decStr;
+    } else {
+      prompt = item.decStr + ' = ?';
+      full = item.decStr + ' = ' + item.fracStr;
+      correct = item.fracStr;
+    }
+    const others = pool.filter(x => x.key !== item.key).map(x => (kind === 'f2d' ? x.decStr : x.fracStr));
+    const options = shuffle([correct, ...shuffle(others.slice()).slice(0, 3)]);
+    return { prompt, full, correct, options };
+  }
+  // </pure>
+
+  const $ = s => document.querySelector(s);
+  const MODES = {
+    ans:  { label: '式 → 答え',   sample: '7×8 → 56'   },
+    expr: { label: '答え → 式',   sample: '56 → 7×8'   },
+    div:  { label: '割り算',      sample: '56÷7 → 8'   },
+    f2d:  { label: '分数 → 小数', sample: '3/4 → 0.75' },
+    d2f:  { label: '小数 → 分数', sample: '0.75 → 3/4' }
+  };
+  const KUKU_KINDS = ['ans', 'expr', 'div'];
+  const FRACS = buildFracs();
+  const SPEEDS = {
+    slow:   { label: 'ゆっくり', base: 9.0, min: 4.0 },
+    normal: { label: 'ふつう',   base: 7.0, min: 2.8 },
+    fast:   { label: 'はやい',   base: 5.0, min: 1.8 },
+    oni:    { label: '鬼',       base: 3.2, min: 1.0 }
+  };
+  const SPEED_ORDER = ['slow', 'normal', 'fast', 'oni'];
+  const DEFAULTS = { mode: 'ans', dans: [1,2,3,4,5,6,7,8,9], speed: 'normal', weak: true, dual: false };
+  const STORE_KEY = 'sokutou-kuku-v2';
+
+  function emptyStore(){ return { best: {}, stats: {}, settings: {} }; }
+  function loadStore(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        const o = JSON.parse(raw);
+        if (o && typeof o === 'object') {
+          return { best: o.best || {}, stats: o.stats || {}, settings: o.settings || {} };
+        }
+      }
+    } catch (e) {}
+    return emptyStore();
+  }
+  function saveStore(){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {}
+  }
+  function sanitize(s){
+    const o = Object.assign({}, DEFAULTS, s || {});
+    if (!MODES[o.mode]) o.mode = DEFAULTS.mode;
+    if (!SPEEDS[o.speed]) o.speed = DEFAULTS.speed;
+    if (!Array.isArray(o.dans)) o.dans = DEFAULTS.dans.slice();
+    o.dans = o.dans.filter(n => Number.isInteger(n) && n >= 1 && n <= 9);
+    if (!o.dans.length) o.dans = DEFAULTS.dans.slice();
+    o.weak = o.weak !== false;
+    o.dual = !!o.dual;
+    return o;
+  }
+
+  let store = loadStore();
+  let settings = sanitize(store.settings);
+  const persist = () => { store.settings = settings; saveStore(); };
+
+  /* ---------- screens ---------- */
+  function show(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    const el = document.getElementById(id);
+    if (el) el.scrollTop = 0;
+  }
+
+  /* ---------- home ---------- */
+  function renderModes(){
+    const wrap = $('#modes');
+    wrap.innerHTML = '';
+    Object.entries(MODES).forEach(([id, m]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mode';
+      b.dataset.id = id;
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(settings.mode === id));
+      const bestKey = id + ':' + settings.speed + ':' + (settings.dual ? 2 : 1);
+      const best = store.best[bestKey];
+      b.innerHTML =
+        '<span class="mode-main"><span class="mode-name">' + m.label + '</span>' +
+        '<span class="mode-best">' + (best ? '最高 ' + best + ' 点' : '未挑戦') + '</span></span>' +
+        '<span class="mode-sample">' + m.sample + '</span>';
+      wrap.appendChild(b);
+    });
+  }
+  function renderDansVisibility(){
+    $('#dansGroup').hidden = !KUKU_KINDS.includes(settings.mode);
+  }
+  function renderDans(){
+    const wrap = $('#dans');
+    wrap.innerHTML = '';
+    for (let n = 1; n <= 9; n++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.dataset.n = String(n);
+      b.textContent = String(n);
+      b.setAttribute('aria-label', n + 'の段');
+      b.setAttribute('aria-pressed', String(settings.dans.includes(n)));
+      wrap.appendChild(b);
+    }
+    const all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'chip wide';
+    all.dataset.n = 'all';
+    all.textContent = 'ぜんぶ';
+    all.setAttribute('aria-pressed', String(settings.dans.length === 9));
+    wrap.appendChild(all);
+  }
+  function renderSpeedSlider(){
+    const idx = SPEED_ORDER.indexOf(settings.speed);
+    $('#speedRange').value = String(idx);
+    $('#speedLabel').textContent = SPEEDS[settings.speed].label;
+    document.querySelectorAll('.speedslider-ticks span').forEach((el, i) => el.classList.toggle('active', i === idx));
+  }
+  function renderDual(){
+    $('#dual').setAttribute('aria-checked', String(settings.dual));
+    $('#dualState').textContent = settings.dual ? 'オン' : 'オフ';
+  }
+  function renderWeak(){
+    $('#weak').setAttribute('aria-checked', String(settings.weak));
+    $('#weakState').textContent = settings.weak ? 'オン' : 'オフ';
+  }
+  function renderHome(){
+    renderModes(); renderDansVisibility(); renderDans(); renderSpeedSlider(); renderDual(); renderWeak();
+  }
+
+  $('#modes').addEventListener('click', e => {
+    const b = e.target.closest('.mode'); if (!b) return;
+    settings.mode = b.dataset.id; persist(); renderModes(); renderDansVisibility();
+  });
+  $('#dans').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    if (b.dataset.n === 'all') {
+      settings.dans = DEFAULTS.dans.slice();
+    } else {
+      const n = Number(b.dataset.n);
+      const has = settings.dans.includes(n);
+      if (has && settings.dans.length === 1) return;
+      settings.dans = has ? settings.dans.filter(x => x !== n) : settings.dans.concat(n).sort((x, y) => x - y);
+    }
+    persist(); renderDans();
+  });
+  $('#speedRange').addEventListener('input', e => {
+    settings.speed = SPEED_ORDER[Number(e.target.value)];
+    persist(); renderSpeedSlider(); renderModes();
+  });
+  $('#dual').addEventListener('click', () => { settings.dual = !settings.dual; persist(); renderDual(); renderModes(); });
+  $('#weak').addEventListener('click', () => { settings.weak = !settings.weak; persist(); renderWeak(); });
+
+  let resetArmed = null;
+  $('#reset').addEventListener('click', () => {
+    const btn = $('#reset');
+    if (resetArmed) {
+      clearTimeout(resetArmed); resetArmed = null;
+      store = emptyStore(); store.settings = settings; saveStore();
+      btn.textContent = '記録をリセットしました';
+      renderModes();
+      setTimeout(() => { btn.textContent = '記録をリセット'; }, 1800);
+    } else {
+      btn.textContent = 'もう一度押すと最高記録と苦手データが消えます';
+      resetArmed = setTimeout(() => { resetArmed = null; btn.textContent = '記録をリセット'; }, 3500);
+    }
+  });
+
+  /* ---------- game ---------- */
+  const lanesWrap = $('#lanesWrap'), countdownEl = $('#countdown'), live = $('#live');
+  let laneRefs = [];
+  let G = null;
+
+  function buildLanes(n){
+    lanesWrap.className = 'lanes' + (n > 1 ? ' dual' : '');
+    lanesWrap.innerHTML = '';
+    laneRefs = [];
+    for (let i = 0; i < n; i++) {
+      const laneEl = document.createElement('div');
+      laneEl.className = 'lane';
+      laneEl.innerHTML =
+        '<div class="field"><div class="card"><div class="qa"></div></div><div class="floor"></div></div>' +
+        '<div class="choices">' +
+          '<button type="button" class="choice" data-lane="' + i + '" data-i="0" disabled></button>' +
+          '<button type="button" class="choice" data-lane="' + i + '" data-i="1" disabled></button>' +
+          '<button type="button" class="choice" data-lane="' + i + '" data-i="2" disabled></button>' +
+          '<button type="button" class="choice" data-lane="' + i + '" data-i="3" disabled></button>' +
+        '</div>';
+      lanesWrap.appendChild(laneEl);
+      laneRefs.push({
+        field: laneEl.querySelector('.field'),
+        card: laneEl.querySelector('.card'),
+        qa: laneEl.querySelector('.qa'),
+        choiceBtns: Array.from(laneEl.querySelectorAll('.choice'))
+      });
+    }
+  }
+
+  function later(fn, ms){
+    const g = G;
+    const id = setTimeout(() => { if (G === g) { g.timers.delete(id); fn(); } }, ms);
+    g.timers.add(id);
+  }
+  function stopGame(){
+    if (!G) return;
+    cancelAnimationFrame(G.rafId);
+    G.timers.forEach(clearTimeout);
+    G = null;
+  }
+
+  function measureLane(lane){
+    lane.fh = lane.field.clientHeight;
+    lane.ch = lane.card.offsetHeight;
+  }
+  function placeLane(lane, p){
+    const y0 = -lane.ch - 8, y1 = lane.fh - 2 - lane.ch;
+    lane.card.style.transform = 'translate(-50%,' + (y0 + (y1 - y0) * p).toFixed(1) + 'px)';
+  }
+  window.addEventListener('resize', () => { if (G) G.lanes.forEach(measureLane); });
+
+  function weightFor(key){
+    if (!G.weak) return 1;
+    const s = store.stats[key];
+    if (!s) return 1.3;
+    const wrongRate = s.w / Math.max(1, s.n);
+    const slow = Math.max(0, Math.min(1, ((s.t || 0) - 1500) / 3000));
+    return 1 + wrongRate * 4 + slow * 2;
+  }
+  function weightedPick(cands){
+    let r = Math.random() * cands.reduce((s, c) => s + c.w, 0);
+    for (const c of cands) { r -= c.w; if (r <= 0) return c; }
+    return cands[cands.length - 1];
+  }
+  function pickFact(exclude){
+    if (KUKU_KINDS.includes(G.modeId)) {
+      const cands = [];
+      for (const a of G.dans) {
+        for (let b = 1; b <= 9; b++) {
+          const key = G.modeId + ':' + a + 'x' + b;
+          if (exclude.has(key)) continue;
+          cands.push({ a, b, key, w: weightFor(key) });
+        }
+      }
+      return weightedPick(cands);
+    }
+    const cands = FRACS.filter(f => !exclude.has(f.key)).map(f => ({ item: f, key: f.key, w: weightFor(f.key) }));
+    return weightedPick(cands);
+  }
+
+  function duration(){
+    const sp = SPEEDS[G.speed];
+    return Math.max(sp.min, sp.base - (G.level - 1) * 0.35);
+  }
+
+  function updateHUD(){
+    $('#score').textContent = G.score;
+    $('#lvl').textContent = 'Lv ' + G.level;
+    $('#combo').textContent = G.combo >= 2 ? G.combo + '連続' : '';
+    Array.from($('#lives').children).forEach((el, i) => el.classList.toggle('off', i >= G.lives));
+    $('#lives').setAttribute('aria-label', 'ライフ ' + G.lives);
+  }
+
+  function nextQuestionForLane(i){
+    if (!G) return;
+    const lane = G.lanes[i];
+    const exclude = new Set();
+    if (lane.cur) exclude.add(lane.cur.key);
+    G.lanes.forEach((l, j) => { if (j !== i && l.cur) exclude.add(l.cur.key); });
+    const f = pickFact(exclude);
+    const q = KUKU_KINDS.includes(G.modeId) ? makeQuestion(G.modeId, f.a, f.b) : makeFracQuestion(G.modeId, f.item, FRACS);
+    q.key = f.key;
+    lane.cur = q;
+    lane.elapsed = 0;
+    lane.dur = duration();
+    lane.qa.textContent = q.prompt;
+    lane.card.className = 'card show';
+    measureLane(lane);
+    placeLane(lane, 0);
+    lane.choiceBtns.forEach((b, ci) => {
+      b.textContent = q.options[ci];
+      b.className = 'choice';
+      b.disabled = false;
+    });
+    lane.state = 'play';
+  }
+
+  function loop(now){
+    if (!G) return;
+    const dt = Math.min(now - (G.lastTs || now), 100);
+    G.lastTs = now;
+    G.lanes.forEach((lane, i) => {
+      if (lane.state !== 'play') return;
+      lane.elapsed += dt / 1000;
+      const p = Math.min(1, lane.elapsed / lane.dur);
+      placeLane(lane, p);
+      lane.card.classList.toggle('urgent', p > 0.72);
+      if (p >= 1) resolveLane(i, null);
+    });
+    G.rafId = requestAnimationFrame(loop);
+  }
+
+  function resolveLane(i, choiceIdx){
+    if (!G) return;
+    const lane = G.lanes[i];
+    if (lane.state !== 'play') return;
+    lane.state = 'fb';
+    const q = lane.cur;
+    const ok = choiceIdx !== null && q.options[choiceIdx] === q.correct;
+    const ms = Math.round(Math.min(lane.elapsed, lane.dur) * 1000);
+    G.total++;
+
+    const s = store.stats[q.key] || (store.stats[q.key] = { n: 0, w: 0, t: 0 });
+    s.n++;
+    if (!ok) s.w++;
+    s.t = s.t ? Math.round(s.t * 0.7 + ms * 0.3) : ms;
+    saveStore();
+    G.log.push({ key: q.key, text: q.full, ok, ms });
+
+    lane.choiceBtns.forEach((b, ci) => {
+      b.disabled = true;
+      if (q.options[ci] === q.correct) b.classList.add('correct');
+      else if (ci === choiceIdx) b.classList.add('wrong');
+    });
+
+    if (ok) {
+      G.correct++;
+      G.combo++;
+      G.maxCombo = Math.max(G.maxCombo, G.combo);
+      const speedBonus = Math.round((1 - lane.elapsed / lane.dur) * 10);
+      G.score += 10 + speedBonus + Math.min(G.combo, 10);
+      G.streakLv++;
+      if (G.streakLv >= 5) { G.level++; G.streakLv = 0; }
+      lane.card.classList.remove('urgent');
+      lane.card.classList.add('ok');
+      updateHUD();
+      later(() => nextQuestionForLane(i), 160);
+    } else {
+      G.lives--;
+      G.combo = 0;
+      lane.qa.textContent = q.full;
+      lane.card.classList.remove('urgent');
+      lane.card.classList.add('ng');
+      live.textContent = '不正解。正しくは ' + q.full;
+      try { if (navigator.vibrate) navigator.vibrate(80); } catch (e) {}
+      updateHUD();
+      if (G.lives <= 0) {
+        if (!G.ended) { G.ended = true; later(endGame, 1150); }
+      } else {
+        later(() => nextQuestionForLane(i), 1150);
+      }
+    }
+  }
+
+  function startGame(){
+    stopGame();
+    show('game');
+    const laneCount = settings.dual ? 2 : 1;
+    buildLanes(laneCount);
+    countdownEl.hidden = false;
+    G = {
+      modeId: settings.mode, speed: settings.speed, dual: settings.dual,
+      dans: settings.dans.slice(), weak: settings.weak,
+      lives: 3, score: 0, combo: 0, maxCombo: 0, correct: 0, total: 0, level: 1, streakLv: 0,
+      log: [], timers: new Set(), rafId: 0, ended: false, lastTs: 0,
+      lanes: laneRefs.map(l => ({
+        field: l.field, card: l.card, qa: l.qa, choiceBtns: l.choiceBtns,
+        cur: null, elapsed: 0, dur: 0, fh: 0, ch: 0, state: 'idle'
+      }))
+    };
+    live.textContent = '';
+    updateHUD();
+    let n = 3;
+    countdownEl.textContent = String(n);
+    const step = () => {
+      n--;
+      if (n > 0) { countdownEl.textContent = String(n); later(step, 550); }
+      else {
+        countdownEl.hidden = true;
+        G.lanes.forEach((_, i) => nextQuestionForLane(i));
+        G.lastTs = performance.now();
+        G.rafId = requestAnimationFrame(loop);
+      }
+    };
+    later(step, 550);
+  }
+
+  function endGame(){
+    if (!G) return;
+    const g = G;
+    const bestKey = g.modeId + ':' + g.speed + ':' + (g.dual ? 2 : 1);
+    const prev = store.best[bestKey] || 0;
+    const isNew = g.score > prev;
+    if (isNew) { store.best[bestKey] = g.score; saveStore(); }
+
+    const correctMs = g.log.filter(x => x.ok).map(x => x.ms);
+    const avg = correctMs.length ? (correctMs.reduce((a, b) => a + b, 0) / correctMs.length / 1000).toFixed(1) + ' 秒' : '-';
+    $('#rScore').textContent = g.score;
+    $('#rNew').hidden = !isNew;
+    $('#rMeta').textContent = MODES[g.modeId].label + ' / ' + SPEEDS[g.speed].label + (g.dual ? ' / 2列同時' : '');
+    $('#rAcc').textContent = g.total ? Math.round(g.correct / g.total * 100) + '%' : '-';
+    $('#rCombo').textContent = g.maxCombo + ' 問';
+    $('#rAvg').textContent = avg;
+    $('#rLv').textContent = 'Lv ' + g.level;
+
+    const agg = {};
+    g.log.forEach(x => {
+      const o = agg[x.key] || (agg[x.key] = { text: x.text, miss: 0, n: 0, ms: 0 });
+      o.n++; o.ms += x.ms; if (!x.ok) o.miss++;
+    });
+    const weak = Object.values(agg)
+      .map(o => ({ text: o.text, miss: o.miss, avg: o.ms / o.n / 1000 }))
+      .filter(o => o.miss > 0 || o.avg >= 2.5)
+      .sort((a, b) => b.miss - a.miss || b.avg - a.avg)
+      .slice(0, 6);
+    const ul = $('#weakList');
+    ul.innerHTML = '';
+    if (!weak.length) {
+      const li = document.createElement('li');
+      li.className = 'w-empty';
+      li.textContent = 'ミスも、時間がかかった問題もありませんでした。スピードを上げて挑戦してみましょう。';
+      ul.appendChild(li);
+    } else {
+      weak.forEach(o => {
+        const li = document.createElement('li');
+        const eq = document.createElement('span'); eq.className = 'w-eq'; eq.textContent = o.text;
+        const meta = document.createElement('span'); meta.className = 'w-meta';
+        meta.textContent = (o.miss ? 'ミス ' + o.miss + ' 回 / ' : '') + '平均 ' + o.avg.toFixed(1) + ' 秒';
+        li.appendChild(eq); li.appendChild(meta);
+        ul.appendChild(li);
+      });
+    }
+    stopGame();
+    show('result');
+  }
+
+  /* ---------- input ---------- */
+  const choose = (laneIdx, i) => { if (G) resolveLane(laneIdx, i); };
+  lanesWrap.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.choice'); if (!b || b.disabled) return;
+    e.preventDefault();
+    choose(Number(b.dataset.lane), Number(b.dataset.i));
+  });
+  lanesWrap.addEventListener('click', e => {
+    if (e.detail !== 0) return; // pointer clicks are already handled on pointerdown
+    const b = e.target.closest('.choice'); if (!b || b.disabled) return;
+    choose(Number(b.dataset.lane), Number(b.dataset.i));
+  });
+  document.addEventListener('keydown', e => {
+    if (!G || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key >= '1' && e.key <= '4') choose(0, Number(e.key) - 1);
+  });
+
+  $('#start').addEventListener('click', startGame);
+  $('#again').addEventListener('click', startGame);
+  $('#toHome').addEventListener('click', () => { stopGame(); renderHome(); show('home'); });
+  $('#quit').addEventListener('click', () => { stopGame(); renderHome(); show('home'); });
+
+  renderHome();
+})();
+</script>
+</body>
+</html>
